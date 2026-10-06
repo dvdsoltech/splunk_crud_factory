@@ -1,0 +1,92 @@
+spec_version: "1.0"
+
+app:
+  id: peripheral_adhoc_task_tracker
+  label: Prompted by a Colleague
+  description: I had a random thought that spawned a tacit side quest or a teammate prompted me with one of those "quick questions," so now I'm tracking. Now I'm sharing this with the team.
+  version: 1.0.0
+  author: D.W.
+  target:
+    product: splunk-enterprise
+    minimum_version: "9.2"
+
+dashboard:
+  id: tracker_workflow
+  title: Tracker
+  framework: simple_xml
+  description: Manage peripheral but work-related tasks
+
+collections:
+  - name: task_workflow
+    lookup_name: task_workflow
+
+    fields:
+      # Framework-required fields
+      - name: user
+        type: string
+        required: true
+        editable: false
+
+      - name: timestamp
+        type: time
+        required: true
+        editable: false
+
+      - name: message
+        type: string
+        required: true
+        editable: true
+
+      - name: status
+        type: string
+        required: true
+        editable: true
+        allowed_values:
+          - evaluating
+          - testing
+          - validating
+          - resolved
+          - reviewed
+          - closed
+
+      - name: urgency
+        type: string
+        required: true
+        editable: true
+        allowed_values:
+          - low
+          - medium
+          - high
+          - critical
+
+      - name: object
+        type: string
+        required: true
+        editable: true
+
+crud:
+  create: true
+  read: true
+  update: true
+  delete: false
+  bulk_update: true
+  confirmation_on_delete: true
+
+permissions:
+  read:
+    - user
+    - power
+    - admin
+  write:
+    - power
+    - admin
+  admin:
+    - admin
+  export: none
+
+
+features:
+  audit_history: true
+  comments: true
+  attachments: false
+  status_transitions: true
