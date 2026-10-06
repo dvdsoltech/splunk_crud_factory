@@ -2,6 +2,7 @@ spec_version: "1.0"
 
 app:
   id: peripheral_adhoc_task_tracker
+  name: peripheral_adhoc_task_tracker
   label: Prompted by a Colleague
   description: I had a random thought that spawned a tacit side quest or a teammate prompted me with one of those "quick questions," so now I'm tracking. Now I'm sharing this with the team.
   version: 1.0.0
