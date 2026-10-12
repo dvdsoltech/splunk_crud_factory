@@ -1,1 +1,7 @@
-
+type: object
+required:
+  - spec_version
+  - app
+  - dashboard
+  - collections
+  - transforms
