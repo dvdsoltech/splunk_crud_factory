@@ -1,7 +1,170 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "workflow-app.schema.yaml"
+title: Splunk Workflow App
+description: >
+  Defines a Splunk application and the metadata used to generate
+  default/app.conf.
 type: object
+additionalProperties: false
+
 required:
-  - spec_version
+  - version
   - app
-  - dashboard
-  - collections
-  - transforms
+
+properties:
+  version:
+    type: string
+    description: Version of the workflow-app document format.
+    minLength: 1
+
+  app:
+    $ref: "#/$defs/app"
+
+$defs:
+  app:
+    type: object
+    description: >
+      A Splunk application package. The app_conf property represents
+      settings written to the app's default/app.conf file.
+    additionalProperties: false
+    required:
+      - id
+      - app_conf
+
+    properties:
+      id:
+        type: string
+        description: >
+          Stable identifier for the Splunk app. This normally matches
+          the app directory and package identifier.
+        pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+        minLength: 1
+
+      app_conf:
+        $ref: "#/$defs/appConf"
+
+  appConf:
+    type: object
+    description: Representation of default/app.conf.
+    additionalProperties: false
+    required:
+      - id
+      - launcher
+      - install
+      - package
+      - ui
+
+    properties:
+      id:
+        $ref: "#/$defs/idStanza"
+
+      launcher:
+        $ref: "#/$defs/launcherStanza"
+
+      install:
+        $ref: "#/$defs/installStanza"
+
+      package:
+        $ref: "#/$defs/packageStanza"
+
+      ui:
+        $ref: "#/$defs/uiStanza"
+
+  idStanza:
+    type: object
+    description: Settings written to the app.conf [id] stanza.
+    additionalProperties: false
+    required:
+      - name
+
+    properties:
+      name:
+        type: string
+        description: Internal name of the Splunk application.
+        pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+        minLength: 1
+
+  launcherStanza:
+    type: object
+    description: Settings written to the app.conf [launcher] stanza.
+    additionalProperties: false
+    required:
+      - version
+      - author
+      - description
+
+    properties:
+      version:
+        type:
+          - string
+          - number
+        description: Application release version.
+
+      author:
+        type: string
+        description: Application author or publisher.
+        minLength: 1
+
+      description:
+        type: string
+        description: Human-readable description of the application.
+        minLength: 1
+
+      label:
+        type: string
+        description: Optional human-readable application name.
+        minLength: 1
+
+  installStanza:
+    type: object
+    description: Settings written to the app.conf [install] stanza.
+    additionalProperties: false
+    required:
+      - state
+      - build
+
+    properties:
+      state:
+        type: string
+        description: Initial installation state of the application.
+        enum:
+          - enabled
+          - disabled
+
+      build:
+        type:
+          - string
+          - integer
+        description: Application build identifier.
+
+  packageStanza:
+    type: object
+    description: Settings written to the app.conf [package] stanza.
+    additionalProperties: false
+    required:
+      - id
+
+    properties:
+      id:
+        type: string
+        description: Stable package identifier for the application.
+        pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+        minLength: 1
+
+  uiStanza:
+    type: object
+    description: Settings written to the app.conf [ui] stanza.
+    additionalProperties: false
+    required:
+      - is_visible
+      - label
+
+    properties:
+      is_visible:
+        type: boolean
+        description: Whether the app is visible in the Splunk application UI.
+
+      label:
+        type: string
+        description: Human-readable application label displayed in Splunk Web.
+        minLength: 1
