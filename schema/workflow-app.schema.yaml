@@ -1,9 +1,12 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
-$id: "workflow-app.schema.yaml"
-title: Splunk Workflow App
+$id: "https://example.invalid/schema/workflow-app.schema.yaml"
+
+title: Splunk CRUD Factory Workflow App
 description: >
-  Defines a Splunk application and the metadata used to generate
-  default/app.conf.
+  Schema for generating a Splunk application containing app.conf metadata,
+  a KV Store collection, KV Store lookup transformations, and Simple XML
+  dashboards.
+
 type: object
 additionalProperties: false
 
@@ -14,39 +17,73 @@ required:
 properties:
   version:
     type: string
-    description: Version of the workflow-app document format.
-    minLength: 1
+    const: "1"
 
   app:
     $ref: "#/$defs/app"
 
 $defs:
+  identifier:
+    type: string
+    minLength: 1
+    maxLength: 128
+    pattern: "^[A-Za-z][A-Za-z0-9_-]*$"
+
+  nonEmptyString:
+    type: string
+    minLength: 1
+
+  relativePath:
+    type: string
+    minLength: 1
+    pattern: "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+$"
+
+  assetPath:
+    type: string
+    minLength: 1
+    pattern: "^(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+\\.(?:js|css)$"
+
   app:
     type: object
-    description: >
-      A Splunk application package. The app_conf property represents
-      settings written to the app's default/app.conf file.
     additionalProperties: false
+
     required:
       - id
       - app_conf
+      - collection
+      - transforms
+      - dashboards
 
     properties:
       id:
-        type: string
-        description: >
-          Stable identifier for the Splunk app. This normally matches
-          the app directory and package identifier.
-        pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
-        minLength: 1
+        $ref: "#/$defs/identifier"
 
       app_conf:
         $ref: "#/$defs/appConf"
 
+      dashboard:
+        $ref: "#/$defs/dashboardDefaults"
+
+      collection:
+        $ref: "#/$defs/collection"
+
+      transforms:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: "#/$defs/transform"
+
+      dashboards:
+        type: array
+        minItems: 1
+        items:
+          $ref: "#/$defs/dashboard"
+
   appConf:
     type: object
-    description: Representation of default/app.conf.
     additionalProperties: false
+
     required:
       - id
       - launcher
@@ -56,115 +93,220 @@ $defs:
 
     properties:
       id:
-        $ref: "#/$defs/idStanza"
+        type: object
+        additionalProperties: false
+        required:
+          - name
+        properties:
+          name:
+            $ref: "#/$defs/identifier"
 
       launcher:
-        $ref: "#/$defs/launcherStanza"
+        type: object
+        additionalProperties: false
+        required:
+          - version
+          - author
+          - description
+        properties:
+          version:
+            type: string
+            minLength: 1
+          author:
+            $ref: "#/$defs/nonEmptyString"
+          description:
+            $ref: "#/$defs/nonEmptyString"
+          label:
+            $ref: "#/$defs/nonEmptyString"
 
       install:
-        $ref: "#/$defs/installStanza"
+        type: object
+        additionalProperties: false
+        required:
+          - state
+          - build
+        properties:
+          state:
+            type: string
+            enum:
+              - enabled
+              - disabled
+          build:
+            oneOf:
+              - type: string
+                minLength: 1
+              - type: integer
+                minimum: 0
 
       package:
-        $ref: "#/$defs/packageStanza"
+        type: object
+        additionalProperties: false
+        required:
+          - id
+        properties:
+          id:
+            $ref: "#/$defs/identifier"
 
       ui:
-        $ref: "#/$defs/uiStanza"
+        type: object
+        additionalProperties: false
+        required:
+          - is_visible
+          - label
+        properties:
+          is_visible:
+            type: boolean
+          label:
+            $ref: "#/$defs/nonEmptyString"
 
-  idStanza:
+  dashboardDefaults:
     type: object
-    description: Settings written to the app.conf [id] stanza.
     additionalProperties: false
+
+    properties:
+      scripts:
+        type: array
+        uniqueItems: true
+        items:
+          allOf:
+            - $ref: "#/$defs/assetPath"
+            - pattern: "\\.js$"
+
+      stylesheets:
+        type: array
+        uniqueItems: true
+        items:
+          allOf:
+            - $ref: "#/$defs/assetPath"
+            - pattern: "\\.css$"
+
+  collection:
+    type: object
+    additionalProperties: false
+
     required:
       - name
+      - fields
 
     properties:
       name:
-        type: string
-        description: Internal name of the Splunk application.
-        pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
-        minLength: 1
+        $ref: "#/$defs/identifier"
 
-  launcherStanza:
+      fields:
+        type: object
+        additionalProperties: false
+
+        required:
+          - user
+          - timestamp
+          - message
+          - status
+          - urgency
+          - object
+
+        properties:
+          user:
+            $ref: "#/$defs/collectionField"
+
+          timestamp:
+            $ref: "#/$defs/collectionField"
+
+          message:
+            $ref: "#/$defs/collectionField"
+
+          status:
+            $ref: "#/$defs/collectionField"
+
+          urgency:
+            $ref: "#/$defs/collectionField"
+
+          object:
+            $ref: "#/$defs/collectionField"
+
+  collectionField:
     type: object
-    description: Settings written to the app.conf [launcher] stanza.
     additionalProperties: false
     required:
-      - version
-      - author
-      - description
+      - type
 
     properties:
-      version:
-        type:
+      type:
+        type: string
+        enum:
           - string
           - number
-        description: Application release version.
+          - bool
+          - time
 
-      author:
-        type: string
-        description: Application author or publisher.
-        minLength: 1
-
-      description:
-        type: string
-        description: Human-readable description of the application.
-        minLength: 1
-
-      label:
-        type: string
-        description: Optional human-readable application name.
-        minLength: 1
-
-  installStanza:
+  transform:
     type: object
-    description: Settings written to the app.conf [install] stanza.
     additionalProperties: false
+
     required:
-      - state
-      - build
+      - name
+      - collection
+      - fields
 
     properties:
-      state:
-        type: string
-        description: Initial installation state of the application.
-        enum:
-          - enabled
-          - disabled
+      name:
+        $ref: "#/$defs/identifier"
 
-      build:
-        type:
-          - string
-          - integer
-        description: Application build identifier.
+      collection:
+        $ref: "#/$defs/identifier"
 
-  packageStanza:
+      fields:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          type: string
+          enum:
+            - user
+            - timestamp
+            - message
+            - status
+            - urgency
+            - object
+
+  dashboard:
     type: object
-    description: Settings written to the app.conf [package] stanza.
     additionalProperties: false
+
     required:
       - id
-
-    properties:
-      id:
-        type: string
-        description: Stable package identifier for the application.
-        pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
-        minLength: 1
-
-  uiStanza:
-    type: object
-    description: Settings written to the app.conf [ui] stanza.
-    additionalProperties: false
-    required:
-      - is_visible
       - label
 
     properties:
-      is_visible:
-        type: boolean
-        description: Whether the app is visible in the Splunk application UI.
+      id:
+        $ref: "#/$defs/identifier"
 
       label:
+        $ref: "#/$defs/nonEmptyString"
+
+      description:
         type: string
-        description: Human-readable application label displayed in Splunk Web.
-        minLength: 1
+
+      source:
+        allOf:
+          - $ref: "#/$defs/relativePath"
+          - pattern: "\\.xml$"
+
+      include_in_nav:
+        type: boolean
+        default: true
+
+      scripts:
+        type: array
+        uniqueItems: true
+        items:
+          allOf:
+            - $ref: "#/$defs/assetPath"
+            - pattern: "\\.js$"
+
+      stylesheets:
+        type: array
+        uniqueItems: true
+        items:
+          allOf:
+            - $ref: "#/$defs/assetPath"
+            - pattern: "\\.css$"
