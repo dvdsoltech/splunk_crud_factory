@@ -1,0 +1,94 @@
+version: "1"
+
+app:
+  # The app's directory/package identifier.
+  # Usually matches the directory under $SPLUNK_HOME/etc/apps.
+  id: example_splunk_app
+
+  # Metadata used to generate default/app.conf.
+  app_conf:
+    id:
+      name: example_splunk_app
+
+    launcher:
+      version: "1.0.0"
+      author: Example Organization
+      description: Example Splunk application
+      # Optional human-readable application name.
+      label: Example Splunk App
+
+    install:
+      state: enabled
+      build: "1"
+
+    package:
+      id: example_splunk_app
+
+    ui:
+      is_visible: true
+      label: Example Splunk App
+
+  # Shared settings used by generated dashboards.
+  dashboard:
+    # JavaScript and CSS paths are relative to appserver/static.
+    scripts:
+      - workflow/dashboard_workflow_update.js
+
+    stylesheets:
+      - workflow/dashboard_workflow_visual.css
+
+  # Defines the KV Store collection written to default/collections.conf.
+  collection:
+    name: workflow_items
+
+    fields:
+      user:
+        type: string
+
+      timestamp:
+        type: number
+
+      message:
+        type: string
+
+      status:
+        type: string
+
+      urgency:
+        type: string
+
+      object:
+        type: string
+
+  # Defines KV Store lookups written to default/transforms.conf.
+  transforms:
+    - name: workflow_items_lookup
+      collection: workflow_items
+
+      # All fields must exist in app.collection.fields.
+      fields:
+        - user
+        - timestamp
+        - message
+        - status
+        - urgency
+        - object
+
+  # Each entry creates or renders one XML file under:
+  # default/data/ui/views/
+  dashboards:
+    - id: workflow
+      label: Workflow
+      description: Manage workflow collection records
+
+      # Optional template path, relative to the app template directory.
+      # When omitted, scaffold.py generates a minimal Simple XML dashboard.
+      source: default/data/ui/views/workflow.xml
+
+      # Whether this dashboard should be included in default navigation.
+      include_in_nav: true
+
+      # Optional per-dashboard assets. These are merged with the global
+      # app.dashboard scripts and stylesheets.
+      scripts: []
+      stylesheets: []
